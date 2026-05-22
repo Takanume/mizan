@@ -1,0 +1,29 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+.env
+
+# Secrets Streamlit (ne JAMAIS commit la passphrase)
+.streamlit/secrets.toml
+
+# Sorties de pipeline (gardées hors repo)
+out/
+*.log
+
+# Données client sensibles (symlinks vers ../3.Modèle DDP)
+samples/input
+samples/output_reference
+
+# Fichiers temporaires de session
+.cleanup_log.txt
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

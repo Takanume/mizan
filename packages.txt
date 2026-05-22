@@ -1,0 +1,4 @@
+tesseract-ocr
+tesseract-ocr-fra
+tesseract-ocr-ara
+poppler-utils
