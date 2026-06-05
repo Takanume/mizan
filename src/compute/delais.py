@@ -146,17 +146,28 @@ def determiner_statut(
     facture: Facture,
     imputation: Imputation,
     date_echeance: date,
+    date_cloture: Optional[date] = None,
 ) -> tuple[StatutFacture, Optional[int]]:
     """Détermine le statut d'une facture et les jours de retard.
 
     Retourne (statut, jours_retard). `jours_retard` peut être None si la
-    facture n'est pas payée.
+    facture n'est pas payée et n'est pas encore échue.
+
+    Pour une facture non payée (FNP), on distingue deux situations grâce à
+    `date_cloture` (dernier jour du trimestre) :
+      - échéance déjà dépassée à la clôture → **FNP en retard** : on renvoie
+        le retard « à date » = (clôture − échéance), positif et figé au jour
+        de clôture (il continue de courir tant que la facture reste impayée) ;
+      - échéance encore future → **FNP dans les délais** : jours_retard = None.
+    Sans `date_cloture`, on conserve l'ancien comportement (None).
     """
     reste = facture.montant_ttc - imputation.montant_impute
     tol = tolerance(facture.montant_ttc)
 
     # Facture totalement non payée
     if imputation.montant_impute == 0:
+        if date_cloture is not None and date_echeance < date_cloture:
+            return StatutFacture.NON_PAYE, (date_cloture - date_echeance).days
         return StatutFacture.NON_PAYE, None
 
     # Facture partiellement payée au-delà de la tolérance
@@ -280,8 +291,13 @@ def _facture_soldee_pre_periode(
 def calculer_lignes_suivi_avec_filtre(
     lettrage: Lettrage,
     debut_periode: Optional[date] = None,
+    fin_periode: Optional[date] = None,
 ) -> list[LigneSuivi]:
-    """Comme `calculer_lignes_suivi` mais filtre les factures pré-période."""
+    """Comme `calculer_lignes_suivi` mais filtre les factures pré-période.
+
+    `fin_periode` (date de clôture du trimestre) permet de distinguer les
+    FNP en retard des FNP encore dans les délais (cf. `determiner_statut`).
+    """
     if not lettrage.factures:
         return []
 
@@ -297,7 +313,7 @@ def calculer_lignes_suivi_avec_filtre(
 
         echeance = calculer_date_echeance(f, delai)
         delai_effectif = f.delai_surcharge if f.delai_surcharge else delai
-        statut, jours = determiner_statut(f, imp, echeance)
+        statut, jours = determiner_statut(f, imp, echeance, fin_periode)
         observations = _detecter_observations(f, debut_periode)
 
         lignes.append(LigneSuivi(
@@ -323,14 +339,20 @@ def calculer_lignes_suivi_avec_filtre(
 def calculer_toutes_lignes(
     lettrages: list[Lettrage],
     debut_periode: Optional[date] = None,
+    fin_periode: Optional[date] = None,
 ) -> list[LigneSuivi]:
     """Produit toutes les lignes du Suivi Global à partir des lettrages.
 
     Si `debut_periode` est fourni, on exclut les factures entièrement soldées
     par des paiements reportés (AN) — elles ont été réglées en pratique avant
     la période courante.
+
+    `fin_periode` (date de clôture du trimestre) permet de calculer le retard
+    « à date » des FNP échues (cf. `determiner_statut`).
     """
     lignes: list[LigneSuivi] = []
     for l in lettrages:
-        lignes.extend(calculer_lignes_suivi_avec_filtre(l, debut_periode))
+        lignes.extend(
+            calculer_lignes_suivi_avec_filtre(l, debut_periode, fin_periode)
+        )
     return lignes

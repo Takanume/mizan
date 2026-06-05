@@ -12,6 +12,7 @@ Lancement :
 
 from __future__ import annotations
 
+import calendar
 import sys
 import tempfile
 import time
@@ -418,7 +419,11 @@ def _executer_pipeline():
     annee = 2000 + int(st.session_state.trimestre[2:])
     mois_debut = {1: 1, 2: 4, 3: 7, 4: 10}[tri]
     debut = date(annee, mois_debut, 1)
-    lignes = calculer_toutes_lignes(lettrages, debut_periode=debut)
+    # Date de clôture = dernier jour du trimestre (pour le retard à date des FNP)
+    mois_fin = {1: 3, 2: 6, 3: 9, 4: 12}[tri]
+    dernier_jour = calendar.monthrange(annee, mois_fin)[1]
+    fin = date(annee, mois_fin, dernier_jour)
+    lignes = calculer_toutes_lignes(lettrages, debut_periode=debut, fin_periode=fin)
 
     # 7. Anomalies
     progress.progress(85, text="Détection des anomalies…")

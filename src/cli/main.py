@@ -153,7 +153,7 @@ def cmd_run(args) -> int:
 
     # 4) Calcul délais & statuts
     section("Calcul des délais")
-    lignes = calculer_toutes_lignes(lettrages, debut_periode=debut)
+    lignes = calculer_toutes_lignes(lettrages, debut_periode=debut, fin_periode=fin)
     print(f"  {len(lignes)} lignes de suivi générées")
     tableau_stats(lignes)
 
