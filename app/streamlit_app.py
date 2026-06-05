@@ -296,27 +296,11 @@ st.markdown(
 
 st.markdown("### 1.  Fichiers d'entrée")
 
-col1, col2 = st.columns(2)
-with col1:
-    f_gl = st.file_uploader(
-        "Grand Livre Sage (.xlsx)",
-        type=["xlsx"],
-        help="Export Sage du Grand Livre fournisseurs sur la période",
-    )
-with col2:
-    f_base = st.file_uploader(
-        "Référentiel DGI (.xlsx)",
-        type=["xlsx"],
-        help="Optionnel — base fournisseurs avec délais, N° IF, ICE, RC…",
-    )
-
-# Template Simpl (fixe ou paramétrable)
-with st.expander("Templates avancés"):
-    col_a, col_b = st.columns(2)
-    with col_a:
-        f_template = st.file_uploader("Template Suivi Global (.xlsx)", type=["xlsx"])
-    with col_b:
-        f_simpl_template = st.file_uploader("Template Simpl DGI (.xlsx)", type=["xlsx"])
+f_gl = st.file_uploader(
+    "Grand Livre Sage (.xlsx)",
+    type=["xlsx"],
+    help="Export Sage du Grand Livre fournisseurs sur la période",
+)
 
 
 # ─── Étape 2 — Exécution ──────────────────────────────────────────────────
@@ -336,23 +320,13 @@ def _executer_pipeline():
     progress = st.progress(0, text="Démarrage…")
     t0 = time.time()
 
-    # 1. Sauvegarde des uploads (ou fallback samples en mode démo)
+    # 1. Sauvegarde de l'upload (seul le Grand Livre est requis ; les
+    #    templates utilisent les versions embarquées dans app/templates).
     progress.progress(10, text="Préparation des fichiers…")
-    samples = ROOT / "samples" / "input"
-    if st.session_state.demo_mode:
-        gl_path   = samples / "UEMA - GL FRS 2026.xlsx"
-        base_path = samples / "Référentiel DGI - Cabinet.xlsx"
-    else:
-        gl_path   = _save_uploaded(f_gl) if f_gl else None
-        base_path = _save_uploaded(f_base) if f_base else None
-    template_path = (
-        _save_uploaded(f_template) if f_template
-        else ROOT / "app" / "templates" / "Modèle Suivi Global.xlsx"
-    )
-    simpl_template_path = (
-        _save_uploaded(f_simpl_template) if f_simpl_template
-        else ROOT / "app" / "templates" / "Modèle Simpl DGI.xlsx"
-    )
+    gl_path   = _save_uploaded(f_gl) if f_gl else None
+    base_path = None
+    template_path = ROOT / "app" / "templates" / "Modèle Suivi Global.xlsx"
+    simpl_template_path = ROOT / "app" / "templates" / "Modèle Simpl DGI.xlsx"
 
     if not gl_path:
         st.error("⚠️ Le Grand Livre Sage est obligatoire.")
