@@ -458,6 +458,22 @@ def _executer_pipeline():
     progress.progress(20, text="Chargement de la base fournisseurs…")
     if base_path:
         base = charger_base_fournisseurs(base_path)
+        if len(base) < 5:
+            # Trop peu de fournisseurs → c'est probablement le modèle VIERGE
+            # (« Modèle Suivi Global.xlsx ») et non le Suivi rempli du cabinet.
+            st.warning(
+                f"⚠️ Seulement **{len(base)}** fournisseur(s) lu(s) dans la base — "
+                "ce fichier semble **vide**. As-tu chargé le *modèle vierge* au "
+                "lieu du **Suivi Global rempli du cabinet** (avec les délais dans "
+                "l'onglet « Base Frs Permanente ») ? Sans délais, 60 j sont "
+                "appliqués par défaut et les FNP « en retard » sont surestimées.",
+                icon="⚠️",
+            )
+        else:
+            st.success(
+                f"✓ Base chargée — **{len(base)}** fournisseurs avec leurs délais réels.",
+                icon="✅",
+            )
     else:
         base = {}
         st.warning(
