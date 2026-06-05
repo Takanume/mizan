@@ -417,9 +417,11 @@ with col1:
     )
 with col2:
     f_base = st.file_uploader(
-        "Référentiel DGI (.xlsx)",
+        "Base fournisseurs / Suivi Global (.xlsx)",
         type=["xlsx"],
-        help="Optionnel — base fournisseurs avec délais, N° IF, ICE, RC… (remplit le Simpl)",
+        help="Le Suivi Global du cabinet (onglet « Base Frs Permanente ») — "
+             "fournit les délais de paiement réels par fournisseur. "
+             "Sans ce fichier, un délai de 60 j est appliqué par défaut.",
     )
 
 
@@ -458,6 +460,13 @@ def _executer_pipeline():
         base = charger_base_fournisseurs(base_path)
     else:
         base = {}
+        st.warning(
+            "⚠️ Aucune base fournisseurs fournie — un délai de **60 j** est "
+            "appliqué par défaut à tous les fournisseurs. Les FNP « en retard » "
+            "peuvent être **surestimées**. Charge le Suivi Global du cabinet "
+            "(onglet « Base Frs Permanente ») pour utiliser les délais réels.",
+            icon="⚠️",
+        )
     st.session_state.base_fournisseurs = base
 
     # 3. Parsing GL
