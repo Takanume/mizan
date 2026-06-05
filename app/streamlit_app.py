@@ -257,23 +257,24 @@ with st.sidebar:
         value=int(st.session_state.delai_defaut),
     )
 
-    st.markdown("---")
-    st.markdown("### Mode démo")
-    if st.button("🎬  Charger l'exemple UEMA 1T26", use_container_width=True):
-        st.session_state.demo_mode = True
-        st.session_state.client = "UEMA"
-        st.session_state.trimestre = "1T26"
-        st.session_state.n_if = "14367938"
-        st.session_state.raison_sociale = "STE UEMA INDUSTRY"
-        st.session_state.ca_n1 = 23369748.49
-        st.session_state.activite = 1
-        st.success("✓ Exemple UEMA chargé — clique sur **Lancer Mizan**")
-        st.rerun()
-    if st.session_state.demo_mode:
-        st.caption("Mode démo actif — les fichiers samples seront utilisés")
-        if st.button("✕ Sortir du mode démo", use_container_width=True):
-            st.session_state.demo_mode = False
-            st.rerun()
+    # ─── Mode démo (désactivé pour le moment) ─────────────────────────
+    # st.markdown("---")
+    # st.markdown("### Mode démo")
+    # if st.button("🎬  Charger l'exemple UEMA 1T26", use_container_width=True):
+    #     st.session_state.demo_mode = True
+    #     st.session_state.client = "UEMA"
+    #     st.session_state.trimestre = "1T26"
+    #     st.session_state.n_if = "14367938"
+    #     st.session_state.raison_sociale = "STE UEMA INDUSTRY"
+    #     st.session_state.ca_n1 = 23369748.49
+    #     st.session_state.activite = 1
+    #     st.success("✓ Exemple UEMA chargé — clique sur **Lancer Mizan**")
+    #     st.rerun()
+    # if st.session_state.demo_mode:
+    #     st.caption("Mode démo actif — les fichiers samples seront utilisés")
+    #     if st.button("✕ Sortir du mode démo", use_container_width=True):
+    #         st.session_state.demo_mode = False
+    #         st.rerun()
 
     st.markdown("---")
     st.markdown(
