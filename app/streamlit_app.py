@@ -2,7 +2,7 @@
 
 Application Streamlit qui expose le pipeline complet en mode no-CLI :
   1. Identification client + paramètres
-  2. Upload des fichiers d'entrée (GL, référentiel, corrections)
+  2. Upload des fichiers d'entrée (GL, référentiel)
   3. Exécution (parsing, lettrage, calcul, anomalies)
   4. Dashboard interactif + téléchargements
 
@@ -30,13 +30,10 @@ sys.path.insert(0, str(ROOT / "src"))
 from parser import parser_gl_liste                                       # noqa: E402
 from lettrage import construire_lettrages                                # noqa: E402
 from compute import (calculer_toutes_lignes,                             # noqa: E402
-                     charger_base_fournisseurs,
-                     charger_corrections,
-                     construire_index)
+                     charger_base_fournisseurs)
 from output import generer_simpl, generer_suivi_global                   # noqa: E402
 from quality import detecter_doublons, annoter_lignes, TypeAnomalie      # noqa: E402
 from models import StatutFacture                                          # noqa: E402
-from compute.corrections import CorrectionDate                            # noqa: E402
 
 
 # ─── Charte Nextor / Mizan ────────────────────────────────────────────────
@@ -190,8 +187,6 @@ def init_state():
         "ecritures": None,
         "inconnues": None,
         "hors_base": None,
-        "corrections_index": None,
-        "corrections_manuelles": None,
         "ocr_resultats": None,
         "suivi_path": None,
         "simpl_path": None,
@@ -305,7 +300,7 @@ st.markdown(
 
 st.markdown("### 1.  Fichiers d'entrée")
 
-col1, col2, col3 = st.columns(3)
+col1, col2 = st.columns(2)
 with col1:
     f_gl = st.file_uploader(
         "Grand Livre Sage (.xlsx)",
@@ -317,12 +312,6 @@ with col2:
         "Référentiel DGI (.xlsx)",
         type=["xlsx"],
         help="Optionnel — base fournisseurs avec délais, N° IF, ICE, RC…",
-    )
-with col3:
-    f_corrections = st.file_uploader(
-        "Corrections dates (.xlsx)",
-        type=["xlsx"],
-        help="Optionnel — corrections manuelles des dates AN et délais par facture",
     )
 
 # Template Simpl (fixe ou paramétrable)
@@ -357,11 +346,9 @@ def _executer_pipeline():
     if st.session_state.demo_mode:
         gl_path   = samples / "UEMA - GL FRS 2026.xlsx"
         base_path = samples / "Référentiel DGI - Cabinet.xlsx"
-        corr_path = None
     else:
         gl_path   = _save_uploaded(f_gl) if f_gl else None
         base_path = _save_uploaded(f_base) if f_base else None
-        corr_path = _save_uploaded(f_corrections) if f_corrections else None
     template_path = (
         _save_uploaded(f_template) if f_template
         else ROOT / "app" / "templates" / "Modèle Suivi Global.xlsx"
@@ -387,30 +374,16 @@ def _executer_pipeline():
     progress.progress(35, text="Parsing du Grand Livre…")
     ecritures = parser_gl_liste(gl_path)
 
-    # 4. Corrections
-    progress.progress(50, text="Chargement des corrections…")
-    idx = None
-    if corr_path:
-        corrections = charger_corrections(corr_path)
-        idx = construire_index(corrections)
-
-    # 5. Lettrage
+    # 4. Lettrage
     progress.progress(65, text="Construction des lettrages…")
-    # Fusionne corrections manuelles (data_editor) + corrections fichier
-    if st.session_state.corrections_manuelles:
-        idx = idx or {}
-        for c in st.session_state.corrections_manuelles:
-            idx[(c.nom_fournisseur.upper(), c.n_facture)] = c
     lettrages, inconnues, hors_base = construire_lettrages(
         ecritures, base_fournisseurs=base,
         delai_par_defaut_jours=st.session_state.delai_defaut,
-        corrections_index=idx,
     )
     st.session_state.ecritures = ecritures
     st.session_state.lettrages = lettrages
     st.session_state.inconnues = inconnues
     st.session_state.hors_base = hors_base
-    st.session_state.corrections_index = idx
 
     # 6. Calcul délais
     progress.progress(75, text="Calcul des échéances et retards…")
@@ -510,12 +483,11 @@ if st.session_state.lignes is not None:
     for col, (statut, montant) in zip(cols, montant_par_statut.items()):
         col.metric(statut, f"{float(montant):,.0f}".replace(",", " ") + " MAD")
 
-    # Onglets : aperçu / anomalies / diagnostic / corrections / sondage / téléchargement
-    tab_apercu, tab_anomalies, tab_diag, tab_corr, tab_sondage, tab_download = st.tabs([
+    # Onglets : aperçu / anomalies / diagnostic / sondage / téléchargement
+    tab_apercu, tab_anomalies, tab_diag, tab_sondage, tab_download = st.tabs([
         "📋 Aperçu Suivi",
         "⚠️ Anomalies",
         "🔍 Diagnostic lettrage",
-        "✏️ Corrections dates",
         "🧾 Sondage / OCR",
         "⬇️ Téléchargements",
     ])
@@ -686,89 +658,6 @@ if st.session_state.lignes is not None:
             if len(inconnues) > 200:
                 st.caption(f"… {len(inconnues) - 200} autres écritures non affichées")
 
-    # ─── Tab Corrections dates (D-006) ───────────────────────────────
-    with tab_corr:
-        st.markdown(
-            "Les factures issues d'**À-Nouveaux** (`Cj = AN`) n'ont pas leur vraie "
-            "date — elles ressortent au 01/01. Surcharge ici la date réelle "
-            "et/ou un délai de paiement spécifique."
-        )
-
-        # Pré-remplit avec les factures AN détectées si l'éditeur est vide
-        if "corr_edit_df" not in st.session_state:
-            an_factures = []
-            for l in (st.session_state.lettrages or []):
-                for f in l.factures:
-                    if f.is_report:
-                        an_factures.append({
-                            "Code fournisseur": f.code_fournisseur,
-                            "Nom fournisseur":  f.nom_fournisseur,
-                            "N° Facture":       f.n_facture or "",
-                            "Date facture":     None,
-                            "Date livraison":   None,
-                            "Délai (j)":        None,
-                            "Observations":     "AN — à vérifier",
-                        })
-            # déduplique par (nom, n_facture)
-            vus = set()
-            uniques = []
-            for r in an_factures:
-                k = (r["Nom fournisseur"], r["N° Facture"])
-                if k in vus:
-                    continue
-                vus.add(k); uniques.append(r)
-            st.session_state.corr_edit_df = pd.DataFrame(uniques)
-
-        st.caption(f"{len(st.session_state.corr_edit_df)} factures AN détectées — saisis les vraies dates :")
-
-        edited = st.data_editor(
-            st.session_state.corr_edit_df,
-            num_rows="dynamic",
-            use_container_width=True,
-            height=500,
-            hide_index=True,
-            key="corr_editor",
-            column_config={
-                "Date facture":   st.column_config.DateColumn(format="DD/MM/YYYY"),
-                "Date livraison": st.column_config.DateColumn(format="DD/MM/YYYY"),
-                "Délai (j)":      st.column_config.NumberColumn(min_value=0, max_value=365, step=1),
-            },
-        )
-
-        c1, c2, c3 = st.columns([1, 1, 4])
-        with c1:
-            if st.button("💾 Enregistrer", use_container_width=True):
-                st.session_state.corr_edit_df = edited
-                corrections = []
-                for _, r in edited.iterrows():
-                    d_fact = r.get("Date facture")
-                    if pd.isna(d_fact) or not r.get("N° Facture"):
-                        continue
-                    d_livr = r.get("Date livraison")
-                    delai  = r.get("Délai (j)")
-                    corrections.append(CorrectionDate(
-                        code_fournisseur=str(r.get("Code fournisseur") or "") or None,
-                        nom_fournisseur=str(r["Nom fournisseur"]),
-                        n_facture=str(r["N° Facture"]),
-                        date_facture=pd.to_datetime(d_fact).date(),
-                        date_livraison=pd.to_datetime(d_livr).date() if not pd.isna(d_livr) else None,
-                        delai_jours=int(delai) if pd.notna(delai) else None,
-                        observations=str(r.get("Observations") or "") or None,
-                    ))
-                st.session_state.corrections_manuelles = corrections
-                st.success(f"✓ {len(corrections)} correction(s) enregistrée(s)")
-        with c2:
-            if st.button("🔄 Recalculer", type="primary", use_container_width=True):
-                if not f_gl:
-                    st.warning("Re-uploade le GL pour relancer")
-                else:
-                    _executer_pipeline()
-                    st.rerun()
-        with c3:
-            nb = len(st.session_state.corrections_manuelles or [])
-            if nb:
-                st.info(f"{nb} correction(s) seront appliquées au prochain run")
-
     # ─── Tab Sondage / OCR ───────────────────────────────────────────
     with tab_sondage:
         st.markdown(
@@ -855,19 +744,6 @@ if st.session_state.lignes is not None:
                              "Date facture": st.column_config.DateColumn(format="DD/MM/YYYY"),
                              "Confiance":    st.column_config.ProgressColumn(min_value=0, max_value=1),
                          })
-            if st.button("📥 Verser ces dates dans Corrections"):
-                # Reporte les résultats OCR vers l'éditeur de corrections (matching par n° facture)
-                df_corr = st.session_state.corr_edit_df.copy()
-                n_match = 0
-                for r in st.session_state.ocr_resultats:
-                    if not r["N° Facture"] or not r["Date facture"]:
-                        continue
-                    mask = df_corr["N° Facture"].astype(str) == str(r["N° Facture"])
-                    if mask.any():
-                        df_corr.loc[mask, "Date facture"] = pd.to_datetime(r["Date facture"])
-                        n_match += int(mask.sum())
-                st.session_state.corr_edit_df = df_corr
-                st.success(f"✓ {n_match} ligne(s) renseignée(s). Va dans l'onglet Corrections pour vérifier.")
 
     with tab_download:
         st.markdown("#### Fichiers générés")
