@@ -194,7 +194,8 @@ def init_state():
         "trimestre": "1T26",
         "n_if": "14367938",
         "raison_sociale": "STE UEMA INDUSTRY",
-        "ca_n1": 0.0,
+        # CA N-1 : non affiché dans l'app, mais transmis à l'en-tête du Simpl.
+        "ca_n1": 23369748.49,
         "activite": 1,
         "delai_defaut": 60,
     }
