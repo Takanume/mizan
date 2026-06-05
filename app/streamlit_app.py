@@ -194,7 +194,7 @@ def init_state():
         "trimestre": "1T26",
         "n_if": "14367938",
         "raison_sociale": "STE UEMA INDUSTRY",
-        "ca_n1": 23369748.49,
+        "ca_n1": 0.0,
         "activite": 1,
         "delai_defaut": 60,
     }
@@ -237,13 +237,7 @@ with st.sidebar:
     st.markdown("### Métadonnées DGI")
     st.session_state.n_if = st.text_input("N° IF du client", st.session_state.n_if)
     st.session_state.raison_sociale = st.text_input("Raison sociale", st.session_state.raison_sociale)
-    st.session_state.ca_n1 = st.number_input(
-        "Chiffre d'affaires N-1 (MAD)",
-        min_value=0.0,
-        value=float(st.session_state.ca_n1),
-        step=10000.0,
-        format="%.2f",
-    )
+    # Chiffre d'affaires N-1 : champ retiré de l'interface (rempli côté Simpl).
     st.session_state.activite = st.number_input(
         "Code activité",
         min_value=0,
