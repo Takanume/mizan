@@ -363,12 +363,11 @@ def _executer_pipeline():
         corr_path = _save_uploaded(f_corrections) if f_corrections else None
     template_path = (
         _save_uploaded(f_template) if f_template
-        else ROOT / "samples" / "input" / "Modèle Suivi Global.xlsx"
+        else ROOT / "app" / "templates" / "Modèle Suivi Global.xlsx"
     )
     simpl_template_path = (
         _save_uploaded(f_simpl_template) if f_simpl_template
-        else ROOT / "samples" / "output_reference"
-             / "Simpl délais de paiements UEMA -  TR 01-2026.xlsx"
+        else ROOT / "app" / "templates" / "Modèle Simpl DGI.xlsx"
     )
 
     if not gl_path:
