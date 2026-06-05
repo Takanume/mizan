@@ -92,64 +92,161 @@ _gate_password()
 
 # ─── CSS personnalisé (charte Nextor) ─────────────────────────────────────
 
+LINE    = "#E2E8F0"
+PAPER_2 = "#EEF3F8"
+
 st.markdown(f"""
 <style>
+    /* ─── Base ─────────────────────────────────────────────── */
     .stApp {{ background: {PAPER}; }}
-    .main h1, .main h2, .main h3 {{ color: {NAVY_INK}; }}
+    html, body, [class*="css"] {{
+        font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+        -webkit-font-smoothing: antialiased;
+    }}
+    .main .block-container {{
+        max-width: 1180px;
+        padding-top: 2.2rem;
+        padding-bottom: 4rem;
+    }}
+    .main h1, .main h2, .main h3 {{ color: {NAVY_INK}; letter-spacing: -0.01em; }}
+    .main h3 {{
+        font-size: 1.15rem;
+        font-weight: 700;
+        margin-top: 2.2rem;
+        margin-bottom: 0.8rem;
+        padding-bottom: 0.4rem;
+        border-bottom: 1px solid {LINE};
+    }}
+    .main h4 {{ color: {NAVY_DEEP}; font-weight: 600; margin-top: 1.2rem; }}
+    p, li, .main .stMarkdown {{ color: #334155; line-height: 1.6; }}
+
+    /* ─── Boutons ──────────────────────────────────────────── */
     .stButton>button {{
         background: {NAVY};
         color: white;
         border: none;
-        border-radius: 6px;
-        padding: 0.5rem 1.5rem;
+        border-radius: 8px;
+        padding: 0.55rem 1.6rem;
         font-weight: 600;
+        transition: all 0.15s ease;
+        box-shadow: 0 1px 2px rgba(20,42,68,0.10);
     }}
     .stButton>button:hover {{
         background: {TEAL_DEEP};
         color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 5px 14px rgba(30,140,132,0.25);
     }}
     .stDownloadButton>button {{
         background: {TEAL_DEEP};
         color: white;
         border: none;
-        border-radius: 6px;
-        padding: 0.5rem 1.5rem;
+        border-radius: 8px;
+        padding: 0.55rem 1.6rem;
         font-weight: 600;
+        transition: all 0.15s ease;
+        box-shadow: 0 1px 2px rgba(20,42,68,0.10);
     }}
     .stDownloadButton>button:hover {{
         background: {NAVY};
+        transform: translateY(-1px);
+        box-shadow: 0 5px 14px rgba(43,76,111,0.25);
+    }}
+
+    /* ─── Cartes de métriques ──────────────────────────────── */
+    [data-testid="stMetric"] {{
+        background: white;
+        border: 1px solid {LINE};
+        border-radius: 12px;
+        padding: 1rem 1.2rem;
+        box-shadow: 0 1px 3px rgba(20,42,68,0.05);
+        transition: box-shadow 0.15s ease;
+    }}
+    [data-testid="stMetric"]:hover {{
+        box-shadow: 0 4px 12px rgba(20,42,68,0.10);
     }}
     [data-testid="stMetricLabel"] {{
         color: {TEAL_DEEP};
         font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 2px;
+        letter-spacing: 1.5px;
         font-size: 11px;
     }}
     [data-testid="stMetricValue"] {{
         color: {NAVY_INK};
         font-weight: 700;
+        font-size: 1.7rem;
     }}
+
+    /* ─── Onglets ──────────────────────────────────────────── */
+    [data-testid="stTabs"] [data-baseweb="tab-list"] {{
+        gap: 6px;
+        border-bottom: 1px solid {LINE};
+    }}
+    [data-testid="stTabs"] [data-baseweb="tab"] {{
+        font-weight: 600;
+        color: {GREY};
+        padding: 0.5rem 1rem;
+        border-radius: 8px 8px 0 0;
+    }}
+    [data-testid="stTabs"] [data-baseweb="tab"]:hover {{
+        background: {PAPER_2};
+        color: {NAVY_INK};
+    }}
+    [data-testid="stTabs"] [aria-selected="true"] {{
+        color: {NAVY_INK};
+        background: {PAPER_2};
+    }}
+
+    /* ─── Zone d'upload ────────────────────────────────────── */
+    [data-testid="stFileUploader"] section {{
+        border: 1.5px dashed #C2D2E2;
+        border-radius: 12px;
+        background: white;
+        transition: border-color 0.15s ease, background 0.15s ease;
+    }}
+    [data-testid="stFileUploader"] section:hover {{
+        border-color: {TEAL};
+        background: #FAFEFE;
+    }}
+
+    /* ─── Tableaux & inputs ────────────────────────────────── */
+    [data-testid="stDataFrame"] {{
+        border: 1px solid {LINE};
+        border-radius: 10px;
+        overflow: hidden;
+    }}
+    [data-testid="stExpander"] {{
+        border: 1px solid {LINE};
+        border-radius: 10px;
+    }}
+    .stTextInput input, .stNumberInput input, .stSelectbox div[data-baseweb="select"] > div {{
+        border-radius: 8px;
+    }}
+
+    /* ─── Barre latérale ───────────────────────────────────── */
     div[data-testid="stSidebar"] {{
         background: white;
-        border-right: 1px solid #E5E7EB;
+        border-right: 1px solid {LINE};
     }}
     div[data-testid="stSidebar"] label,
     div[data-testid="stSidebar"] .stMarkdown {{
         color: {NAVY_INK} !important;
     }}
     div[data-testid="stSidebar"] h3 {{
-        color: {NAVY_INK} !important;
         font-size: 12px !important;
         text-transform: uppercase;
         letter-spacing: 2px;
         color: {TEAL_DEEP} !important;
         margin-top: 1.5rem;
+        border: none;
     }}
     div[data-testid="stSidebar"] hr {{
-        border-color: #E5E7EB !important;
+        border-color: {LINE} !important;
         margin: 1rem 0;
     }}
+
+    /* ─── Hero ─────────────────────────────────────────────── */
     .eyebrow {{
         color: {TEAL_DEEP};
         font-size: 11px;
@@ -160,16 +257,18 @@ st.markdown(f"""
     }}
     .hero-title {{
         color: {NAVY_INK};
-        font-size: 36px;
-        font-weight: 700;
+        font-size: 38px;
+        font-weight: 800;
         line-height: 1.1;
-        margin-top: 0.2rem;
-        margin-bottom: 0.5rem;
+        margin-top: 0.3rem;
+        margin-bottom: 0.6rem;
+        letter-spacing: -0.02em;
     }}
     .hero-subtitle {{
         color: {GREY};
         font-size: 15px;
-        margin-bottom: 2rem;
+        margin-bottom: 2.2rem;
+        max-width: 640px;
     }}
 </style>
 """, unsafe_allow_html=True)
