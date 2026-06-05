@@ -638,25 +638,26 @@ if st.session_state.lignes is not None:
             "Observations":   l.observations or "",
         } for l in lignes])
 
-        # Filtres — barre compacte
-        col_f1, col_f2, col_f3, col_f4 = st.columns([2, 2, 1, 1])
-        with col_f1:
-            filtre_statut = st.multiselect(
-                "Filtrer par statut",
-                options=sorted(df["Statut"].unique()),
-                default=[],
-                placeholder="Tous les statuts",
-            )
-        with col_f2:
-            filtre_frs = st.text_input("Rechercher un fournisseur", "", placeholder="Nom ou code…")
-        with col_f3:
-            seul_retards = st.checkbox("Retards uniquement", value=False)
-        with col_f4:
-            taille = st.select_slider(
-                "Hauteur",
-                options=["Compact", "Normal", "Grand", "Plein écran"],
-                value="Grand",
-            )
+        # Filtres — regroupés dans une carte
+        with st.container(border=True):
+            col_f1, col_f2, col_f3, col_f4 = st.columns([2, 2, 1, 1])
+            with col_f1:
+                filtre_statut = st.multiselect(
+                    "Filtrer par statut",
+                    options=sorted(df["Statut"].unique()),
+                    default=[],
+                    placeholder="Tous les statuts",
+                )
+            with col_f2:
+                filtre_frs = st.text_input("Rechercher un fournisseur", "", placeholder="Nom ou code…")
+            with col_f3:
+                seul_retards = st.checkbox("Retards uniquement", value=False)
+            with col_f4:
+                taille = st.select_slider(
+                    "Hauteur",
+                    options=["Compact", "Normal", "Grand", "Plein écran"],
+                    value="Grand",
+                )
         hauteur_px = {"Compact": 420, "Normal": 600, "Grand": 850, "Plein écran": 1200}[taille]
 
         df_filt = df
@@ -670,8 +671,17 @@ if st.session_state.lignes is not None:
         # Bornes pour la ProgressColumn (retards)
         retard_max = max(int(df["Retard (j)"].abs().max() or 1), 30)
 
+        # Zébrage : alternance blanc / gris très clair pour la lisibilité
+        df_filt = df_filt.reset_index(drop=True)
+
+        def _zebra(row):
+            bg = "#FFFFFF" if row.name % 2 == 0 else "#F1F5F9"
+            return [f"background-color: {bg}"] * len(row)
+
+        df_styled = df_filt.style.apply(_zebra, axis=1)
+
         st.dataframe(
-            df_filt,
+            df_styled,
             use_container_width=True,
             height=hauteur_px,
             hide_index=True,
