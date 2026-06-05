@@ -123,7 +123,6 @@ st.markdown(f"""
     /* ─── Boutons ──────────────────────────────────────────── */
     .stButton>button {{
         background: {NAVY};
-        color: white;
         border: none;
         border-radius: 8px;
         padding: 0.55rem 1.6rem;
@@ -131,15 +130,29 @@ st.markdown(f"""
         transition: all 0.15s ease;
         box-shadow: 0 1px 2px rgba(20,42,68,0.10);
     }}
+    /* Texte toujours blanc (le libellé est dans un <p> interne) */
+    .stButton>button, .stButton>button p, .stButton>button div {{
+        color: #FFFFFF !important;
+    }}
     .stButton>button:hover {{
         background: {TEAL_DEEP};
-        color: white;
         transform: translateY(-1px);
         box-shadow: 0 5px 14px rgba(30,140,132,0.25);
     }}
+    .stButton>button:disabled {{
+        background: #AEBDCE;
+        box-shadow: none;
+        transform: none;
+        cursor: not-allowed;
+    }}
+    .stButton>button:disabled, .stButton>button:disabled p {{
+        color: #F1F5F9 !important;
+    }}
+    .stDownloadButton>button, .stDownloadButton>button p, .stDownloadButton>button div {{
+        color: #FFFFFF !important;
+    }}
     .stDownloadButton>button {{
         background: {TEAL_DEEP};
-        color: white;
         border: none;
         border-radius: 8px;
         padding: 0.55rem 1.6rem;
