@@ -478,12 +478,24 @@ if st.session_state.lignes is not None:
     col5.metric("Anomalies", f"{len(anomalies)}",
                 delta=f"{sum(1 for a in anomalies if a.type == TypeAnomalie.DOUBLON_EXACT)} doublons exacts" if anomalies else None)
 
-    # Montants totaux
+    # Montants totaux — les FNP sont scindées en retard / dans les délais
     st.markdown("#### Montants par statut (MAD)")
+    _LIBELLE = {
+        "OK RAS": "🟢 OK RAS",
+        "Attention, paiement hors délais": "🔴 Retard",
+        "Paiement partiel": "🟡 Partiel",
+    }
     montant_par_statut = {}
     for l in lignes:
-        montant_par_statut.setdefault(l.statut.value, Decimal(0))
-        montant_par_statut[l.statut.value] += l.montant_ttc
+        v = l.statut.value
+        if v == "Non encore payée":
+            label = ("🟠 FNP en retard"
+                     if (l.jours_retard and l.jours_retard > 0)
+                     else "🟢 FNP dans les délais")
+        else:
+            label = _LIBELLE.get(v, v)
+        montant_par_statut.setdefault(label, Decimal(0))
+        montant_par_statut[label] += l.montant_ttc
 
     cols = st.columns(len(montant_par_statut))
     for col, (statut, montant) in zip(cols, montant_par_statut.items()):
