@@ -463,12 +463,18 @@ if st.session_state.lignes is not None:
 
     # KPIs en cartes
     statuts = Counter(l.statut.value for l in lignes)
+    fnp_total = statuts.get('Non encore payée', 0)
+    fnp_retard = sum(1 for l in lignes
+                     if l.statut.value == 'Non encore payée'
+                     and l.jours_retard and l.jours_retard > 0)
     col1, col2, col3, col4, col5 = st.columns(5)
     col1.metric("Total lignes", f"{len(lignes)}")
     col2.metric("OK RAS", f"{statuts.get('OK RAS', 0)}")
     col3.metric("Retards", f"{statuts.get('Attention, paiement hors délais', 0)}",
                 delta=None, delta_color="inverse")
-    col4.metric("FNP", f"{statuts.get('Non encore payée', 0)}")
+    col4.metric("FNP", f"{fnp_total}",
+                delta=f"dont {fnp_retard} en retard" if fnp_retard else "toutes dans les délais",
+                delta_color="inverse" if fnp_retard else "off")
     col5.metric("Anomalies", f"{len(anomalies)}",
                 delta=f"{sum(1 for a in anomalies if a.type == TypeAnomalie.DOUBLON_EXACT)} doublons exacts" if anomalies else None)
 
@@ -493,13 +499,19 @@ if st.session_state.lignes is not None:
     ])
 
     with tab_apercu:
-        # Badge visuel par statut
-        _BADGE = {
-            "OK RAS":                              "🟢 OK RAS",
-            "Attention, paiement hors délais":     "🔴 Retard",
-            "Non encore payée":                    "🟠 FNP",
-            "Paiement partiel":                    "🟡 Partiel",
-        }
+        # Badge visuel par statut. Les FNP sont scindées en deux selon que
+        # l'échéance est dépassée à la clôture (retard à date > 0) ou non.
+        def _badge(l):
+            v = l.statut.value
+            if v == "Non encore payée":
+                if l.jours_retard and l.jours_retard > 0:
+                    return "🟠 FNP en retard"
+                return "🟢 FNP dans les délais"
+            return {
+                "OK RAS":                          "🟢 OK RAS",
+                "Attention, paiement hors délais": "🔴 Retard",
+                "Paiement partiel":                "🟡 Partiel",
+            }.get(v, v)
 
         # DataFrame pour affichage
         df = pd.DataFrame([{
@@ -510,7 +522,7 @@ if st.session_state.lignes is not None:
             "Délai (j)":      l.delai_convenu_jours,
             "Échéance":       pd.to_datetime(l.date_echeance) if l.date_echeance else pd.NaT,
             "Retard (j)":     l.jours_retard,
-            "Statut":         _BADGE.get(l.statut.value, l.statut.value),
+            "Statut":         _badge(l),
             "Paiement":       pd.to_datetime(l.date_paiement_effectif) if l.date_paiement_effectif else pd.NaT,
             "Observations":   l.observations or "",
         } for l in lignes])
