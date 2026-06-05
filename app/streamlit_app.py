@@ -97,6 +97,12 @@ PAPER_2 = "#EEF3F8"
 
 st.markdown(f"""
 <style>
+    /* ─── Masquer toute référence GitHub / menu dev ────────── */
+    #MainMenu {{ visibility: hidden; }}
+    [data-testid="stToolbar"] {{ display: none !important; }}
+    a[href*="github.com"] {{ display: none !important; }}
+    .viewerBadge_container__1QSob, [class*="viewerBadge"] {{ display: none !important; }}
+
     /* ─── Base ─────────────────────────────────────────────── */
     .stApp {{ background: {PAPER}; }}
     html, body, [class*="css"] {{

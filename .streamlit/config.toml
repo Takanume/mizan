@@ -13,3 +13,7 @@ enableCORS = false
 
 [browser]
 gatherUsageStats = false
+
+[client]
+# Masque le menu développeur et le lien « View source on GitHub »
+toolbarMode = "minimal"
