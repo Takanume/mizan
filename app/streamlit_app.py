@@ -296,11 +296,19 @@ st.markdown(
 
 st.markdown("### 1.  Fichiers d'entrée")
 
-f_gl = st.file_uploader(
-    "Grand Livre Sage (.xlsx)",
-    type=["xlsx"],
-    help="Export Sage du Grand Livre fournisseurs sur la période",
-)
+col1, col2 = st.columns(2)
+with col1:
+    f_gl = st.file_uploader(
+        "Grand Livre Sage (.xlsx)",
+        type=["xlsx"],
+        help="Export Sage du Grand Livre fournisseurs sur la période",
+    )
+with col2:
+    f_base = st.file_uploader(
+        "Référentiel DGI (.xlsx)",
+        type=["xlsx"],
+        help="Optionnel — base fournisseurs avec délais, N° IF, ICE, RC… (remplit le Simpl)",
+    )
 
 
 # ─── Étape 2 — Exécution ──────────────────────────────────────────────────
@@ -324,7 +332,7 @@ def _executer_pipeline():
     #    templates utilisent les versions embarquées dans app/templates).
     progress.progress(10, text="Préparation des fichiers…")
     gl_path   = _save_uploaded(f_gl) if f_gl else None
-    base_path = None
+    base_path = _save_uploaded(f_base) if f_base else None
     template_path = ROOT / "app" / "templates" / "Modèle Suivi Global.xlsx"
     simpl_template_path = ROOT / "app" / "templates" / "Modèle Simpl DGI.xlsx"
 
