@@ -241,6 +241,32 @@ def extraire_n_facture(texte: str) -> Optional[str]:
     return None
 
 
+# ─── OCR d'une image ────────────────────────────────────────────────────────
+
+def _ocr_image(img, langues: str) -> str:
+    """Lance Tesseract sur une image PIL.
+
+    On sauvegarde l'image en PNG dans un fichier temporaire qu'on maîtrise et
+    on passe son chemin à Tesseract, au lieu de laisser pytesseract gérer le
+    fichier temporaire lui-même. Cela contourne un bug de pytesseract sous
+    Python 3.14 où l'image PPM intermédiaire n'est pas relue par Tesseract
+    (« image file not found: P6 »).
+    """
+    import os
+    import tempfile
+
+    fd, chemin_png = tempfile.mkstemp(suffix=".png")
+    os.close(fd)
+    try:
+        img.save(chemin_png, format="PNG")
+        return pytesseract.image_to_string(chemin_png, lang=langues)
+    finally:
+        try:
+            os.remove(chemin_png)
+        except OSError:
+            pass
+
+
 # ─── Pipeline principal ────────────────────────────────────────────────────
 
 def extraire_pdf(
@@ -267,7 +293,7 @@ def extraire_pdf(
 
     resultats: list[ResultatOCR] = []
     for i, img in enumerate(images, start=1):
-        texte = pytesseract.image_to_string(img, lang=langues)
+        texte = _ocr_image(img, langues)
         type_doc = detecter_type(texte)
         n_fact = extraire_n_facture(texte) if type_doc == TypeDocument.FACTURE else None
         date_fact, confiance = (
